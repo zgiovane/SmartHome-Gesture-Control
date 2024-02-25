@@ -75,20 +75,6 @@ for videoLocation in videoLocations:
 # Recognize the gesture (use cosine similarity for comparing the vectors)
 # =============================================================================
 
-def determineGesture(gestureLocation, gestureFileName, midFrameCounter):
-    videoFeature = extractFeature(gestureLocation, gestureFileName, midFrameCounter)
-    cosSin = 1
-    position = 0
-    cursor = 0
-    for featureVector in featureVectorList:
-        calcCosSin = tf.keras.losses.cosineSimilarity(videoFeature, featureVector.extractedFeature, axis=-1)
-        if calcCosSin < cosSin:
-            cosSin = calcCosSin
-            position = cursor
-        cursor += 1
-    gestureDetail = featureVectorList[position].gestureDetail
-    return gestureDetail
-
 # List of predefined gestures with their details
 gestureDetails = [
     GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
@@ -104,6 +90,19 @@ gestureDetails = [
 ]
 
 
+def determineGesture(gestureLocation, gestureFileName, midFrameCounter):
+    videoFeature = extractFeature(gestureLocation, gestureFileName, midFrameCounter)
+    cosSin = 1
+    position = 0
+    cursor = 0
+    for featureVector in featureVectorList:
+        calcCosSin = tf.keras.losses.cosineSimilarity(videoFeature, featureVector.extractedFeature, axis=-1)
+        if calcCosSin < cosSin:
+            cosSin = calcCosSin
+            position = cursor
+        cursor += 1
+    gestureDetail = featureVectorList[position].gestureDetail
+    return gestureDetail
 
 
 # Print the results to Results.csv
