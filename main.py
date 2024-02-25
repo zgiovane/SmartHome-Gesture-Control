@@ -29,7 +29,7 @@ def extractFeature(location, inputFile, midFrameCounter):
     frameStoragePath = os.path.join(location, "frames/")
     extractedFrame = fe.frameExtractor(pathToInputFile, frameStoragePath, midFrameCounter)
     middleImage = cv2.imread(extractedFrame, cv2.IMREAD_GRAYSCALE)
-    response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.getInstance(), middleImage)
+    response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.get_instance(), middleImage)
     return response
 
 # List of predefined gestures with their details
