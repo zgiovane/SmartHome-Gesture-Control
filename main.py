@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jan 28 00:44:25 2021
 
-@author: chakati
-"""
 import cv2
 import numpy as np
 import os
@@ -11,8 +7,8 @@ import tensorflow as tf
 
 
 ## import the handfeature extractor class
-import frameExtractor as fe
-import handShapeFeatureExtractor as hfe
+import frameextractor as fe
+import handshape_feature_extractor as hfe
 import csv
 
 
