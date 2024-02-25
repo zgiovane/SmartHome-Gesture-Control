@@ -24,11 +24,29 @@ def extract_feature(location, input_file, mid_frame_counter):
     response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.get_instance(), middle_image)
     return response
 
+def filename_to_gesture_key(filename):
+    # Mapping from filename prefix to gesture key
+    mapping = {
+        "DecreaseFanSpeed": "FanDown",
+        "FanOff": "FanOff",
+        "FanOn": "FanOn",
+        "IncreaseFanSpeed": "FanUp",
+        "LightOff": "LightOff",
+        "LightOn": "LightOn",
+    }
+    prefix = filename.split('_')[0]
+    # Use direct mapping or fallback to prefix if not found in mapping
+    # This handles cases like "Num0", "Num1", etc., assuming they match directly
+    return mapping.get(prefix, prefix)
+
+
 def decide_gesture_by_file_name(gesture_file_name):
-    for x in gesture_details:
-        if x.gesture_key == gesture_file_name.split('_')[0]:
-            return x
+    gesture_key = filename_to_gesture_key(gesture_file_name)
+    for gesture in gesture_details:
+        if gesture.gesture_key == gesture_key:
+            return gesture
     return None
+
 
 def determine_gesture(gesture_location, gesture_file_name, mid_frame_counter):
     video_feature = extract_feature(gesture_location, gesture_file_name, mid_frame_counter)
