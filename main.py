@@ -48,6 +48,18 @@ gestureDetails = [
 
 # Function to decide the gesture type by the file name
 def decideGestureByFileName(gestureFileName):
+        gesturePrefixMapping = {
+        "DecreaseFanSpeed": "FanDown",
+        "FanOff": "FanOff",
+        "FanOn": "FanOn",
+        "IncreaseFanSpeed": "FanUp",
+        "LightOff": "LightOff",
+        "LightOn": "LightOn",
+    }
+    # Extract the gesture prefix from the file name
+    gesturePrefix = gestureFileName.split('_')[0]
+    gestureKey = gesturePrefixMapping.get(gesturePrefix, gesturePrefix)  # Direct mapping or use as is
+    
     for x in gestureDetails:
         if x.gestureKey == gestureFileName.split('_')[0]:
             return x
