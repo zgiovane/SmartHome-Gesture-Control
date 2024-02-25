@@ -32,6 +32,20 @@ def extractFeature(location, inputFile, midFrameCounter):
     response = hfe.HandShapeFeatureExtractor.extractFeature(hfe.HandShapeFeatureExtractor.getInstance(), middleImage)
     return response
 
+# List of predefined gestures with their details
+gestureDetails = [
+    GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
+    GestureDetail("Num2", "2", "2"), GestureDetail("Num3", "3", "3"),
+    GestureDetail("Num4", "4", "4"), GestureDetail("Num5", "5", "5"),
+    GestureDetail("Num6", "6", "6"), GestureDetail("Num7", "7", "7"),
+    GestureDetail("Num8", "8", "8"), GestureDetail("Num9", "9", "9"),
+    GestureDetail("FanDown", "Decrease Fan Speed", "10"),
+    GestureDetail("FanOn", "FanOn", "11"), GestureDetail("FanOff", "FanOff", "12"),
+    GestureDetail("FanUp", "Increase Fan Speed", "13"),
+    GestureDetail("LightOff", "LightOff", "14"), GestureDetail("LightOn", "LightOn", "15"),
+    GestureDetail("SetThermo", "SetThermo", "16")
+]
+
 # Function to decide the gesture type by the file name
 def decideGestureByFileName(gestureFileName):
     for x in gestureDetails:
@@ -74,22 +88,6 @@ for videoLocation in videoLocations:
 # =============================================================================
 # Recognize the gesture (use cosine similarity for comparing the vectors)
 # =============================================================================
-
-# List of predefined gestures with their details
-gestureDetails = [
-    GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
-    GestureDetail("Num2", "2", "2"), GestureDetail("Num3", "3", "3"),
-    GestureDetail("Num4", "4", "4"), GestureDetail("Num5", "5", "5"),
-    GestureDetail("Num6", "6", "6"), GestureDetail("Num7", "7", "7"),
-    GestureDetail("Num8", "8", "8"), GestureDetail("Num9", "9", "9"),
-    GestureDetail("FanDown", "Decrease Fan Speed", "10"),
-    GestureDetail("FanOn", "FanOn", "11"), GestureDetail("FanOff", "FanOff", "12"),
-    GestureDetail("FanUp", "Increase Fan Speed", "13"),
-    GestureDetail("LightOff", "LightOff", "14"), GestureDetail("LightOn", "LightOn", "15"),
-    GestureDetail("SetThermo", "SetThermo", "16")
-]
-
-
 def determineGesture(gestureLocation, gestureFileName, midFrameCounter):
     videoFeature = extractFeature(gestureLocation, gestureFileName, midFrameCounter)
     cosSin = 1
