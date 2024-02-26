@@ -40,8 +40,8 @@ class HandShapeFeatureExtractor:
             img = cv2.resize(crop, (300, 300))
             img_arr = np.array(img) / 255.0
             img_arr=np.stack((img_arr,)*3,axis=-1)
-            #img_arr = img_arr.reshape(1, 200, 200, 1)
-            img_arr = img_arr.reshape(1,300, 300,3)
+            img_arr = img_arr.reshape(1, 200, 200, 1)
+            #img_arr = img_arr.reshape(1,300, 300,3)
             return img_arr
         except Exception as e:
             print(str(e))
