@@ -1,101 +1,131 @@
-import cv2
-import os
-import tensorflow as tf
-import frameextractor as fe
-import handshape_feature_extractor as hfe
-import csv
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan 28 00:44:25 2021
 
-class GestureDetail:
-    def __init__(self, gesture_key, gesture_name, output_label):
-        self.gesture_key = gesture_key
+@author: chakati
+"""
+import cv2
+import numpy as np
+import os
+import csv
+import re
+from frameextractor import frameExtractor
+from handshape_feature_extractor import HandShapeFeatureExtractor
+
+import tensorflow as tf
+
+# =============================================================================
+# Helper Classes and Functions
+# =============================================================================
+
+
+class GestureDetails:
+
+    def __init__(self, gesture_Id, gesture_name, output_label):
+        self.gesture_Id = gesture_Id
         self.gesture_name = gesture_name
         self.output_label = output_label
 
+
 class GestureFeature:
-    def __init__(self, gesture_detail: GestureDetail, extracted_feature):
+
+    def __init__(self, gesture_detail: GestureDetails, extracted_feature):
         self.gesture_detail = gesture_detail
         self.extracted_feature = extracted_feature
 
-def extract_feature(location, input_file, mid_frame_counter):
-    path_to_input_file = os.path.join(location, input_file)
-    frame_storage_path = os.path.join(location, "frames/")
-    extracted_frame = fe.frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
+
+def extract_feature(folder_path, input_file, mid_frame_counter):
+
     middle_image = cv2.imread(frameExtractor(folder_path + input_file, folder_path + "frames/", mid_frame_counter), cv2.IMREAD_GRAYSCALE)
     if middle_image is None:
     	print(f"Failed to read image for {input_file}. Check if the file exists and the path is correct.")
-    return    
-    response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.get_instance(), middle_image)
-    return response
-
-def filename_to_gesture_key(filename):
-    # Mapping from filename prefix to gesture key
-    mapping = {
-        "DecreaseFanSpeed": "FanDown",
-        "FanOff": "FanOff",
-        "FanOn": "FanOn",
-        "IncreaseFanSpeed": "FanUp",
-        "LightOff": "LightOff",
-        "LightOn": "LightOn",
-    }
-    prefix = filename.split('_')[0]
-    # Use direct mapping or fallback to prefix if not found in mapping
-    # This handles cases like "Num0", "Num1", etc., assuming they match directly
-    return mapping.get(prefix, prefix)
+    return
 
 
-def decide_gesture_by_file_name(gesture_file_name):
-    gesture_key = filename_to_gesture_key(gesture_file_name)
-    for gesture in gesture_details:
-        if gesture.gesture_key == gesture_key:
-            return gesture
+    feature_extracted = HandShapeFeatureExtractor.extract_feature(HandShapeFeatureExtractor.get_instance(),
+                                                                  middle_image)
+    return feature_extracted
+
+
+def get_gesture_by_file_name(gesture_file_name):
+
+    for x in gesture_data:
+        if x.gesture_Id == gesture_file_name.split('_')[0]:
+            return x
     return None
 
 
-def determine_gesture(gesture_location, gesture_file_name, mid_frame_counter):
-    video_feature = extract_feature(gesture_location, gesture_file_name, mid_frame_counter)
-    cos_sin = 1
-    position = 0
-    cursor = 0
-    for featureVector in featureVectorList:
-        calc_cos_sin = tf.keras.losses.cosine_similarity(video_feature, featureVector.extracted_feature, axis=-1)
-        if calc_cos_sin < cos_sin:
-            cos_sin = calc_cos_sin
-            position = cursor
-        cursor += 1
-    gesture_detail = featureVectorList[position].gesture_detail
-    return gesture_detail
+# a list to containg all gestures and thier details (Id, name, label)
+gesture_data = [GestureDetails("Num0", "0", "0"), GestureDetails("Num1", "1", "1"),
+                GestureDetails("Num2", "2", "2"), GestureDetails("Num3", "3", "3"),
+                GestureDetails("Num4", "4", "4"), GestureDetails("Num5", "5", "5"),
+                GestureDetails("Num6", "6", "6"), GestureDetails("Num7", "7", "7"),
+                GestureDetails("Num8", "8", "8"), GestureDetails("Num9", "9", "9"),
+                GestureDetails("FanDown", "Decrease Fan Speed", "10"),
+                GestureDetails("FanOn", "FanOn", "11"), GestureDetails("FanOff", "FanOff", "12"),
+                GestureDetails("FanUp", "Increase Fan Speed", "13"),
+                GestureDetails("LightOff", "LightOff", "14"), GestureDetails("LightOn", "LightOn", "15"),
+                GestureDetails("SetThermo", "SetThermo", "16")
+                ]
 
-gesture_details = [
-    GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
-    GestureDetail("Num2", "2", "2"), GestureDetail("Num3", "3", "3"),
-    GestureDetail("Num4", "4", "4"), GestureDetail("Num5", "5", "5"),
-    GestureDetail("Num6", "6", "6"), GestureDetail("Num7", "7", "7"),
-    GestureDetail("Num8", "8", "8"), GestureDetail("Num9", "9", "9"),
-    GestureDetail("FanDown", "Decrease Fan Speed", "10"),
-    GestureDetail("FanOn", "FanOn", "11"), GestureDetail("FanOff", "FanOff", "12"),
-    GestureDetail("FanUp", "Increase Fan Speed", "13"),
-    GestureDetail("LightOff", "LightOff", "14"), GestureDetail("LightOn", "LightOn", "15"),
-    GestureDetail("SetThermo", "SetThermo", "16")
-]
+# =============================================================================
+# Get the penultimate layer for trainig data
+# =============================================================================
 
 featureVectorList = []
-path_to_train_data = "traindata/"
+train_data_path = "traindata/"
 count = 0
-for file in os.listdir(path_to_train_data):
-    if not file.startswith('.') and not file.startswith('frames') and not file.startswith('results'):
-        featureVectorList.append(GestureFeature(decide_gesture_by_file_name(file), extract_feature(path_to_train_data, file, count)))
-        count += 1
+for file in os.listdir(train_data_path):
+    # in our path we have videos and folder called frames so we want to take every thing but do not take frames folder
+    if not file.startswith('frames'):
+        featureVectorList.append(GestureFeature(get_gesture_by_file_name(file),
+                                                extract_feature(train_data_path, file, count)))
+        count = count + 1
 
-results = []
-video_locations = ["test/"]
+
+# =============================================================================
+# Recognize the gesture (use cosine similarity for comparing the vectors)
+# =============================================================================
+
+def gesture_detection(gesture_folder_path, gesture_file_name, mid_frame_counter):
+
+    video_feature = extract_feature(gesture_folder_path, gesture_file_name, mid_frame_counter)
+
+    flag = True
+    num_mutations = 0
+    gesture_detail: GestureDetails = GestureDetails("", "", "")
+    while flag and num_mutations < 5:
+        similarity = 1
+        position = 0
+        index = 0
+        for featureVector in featureVectorList:
+            cosine_similarity = tf.keras.losses.cosine_similarity(video_feature, featureVector.extracted_feature,
+                                                                  axis=-1)
+            if cosine_similarity < similarity:
+                similarity = cosine_similarity
+                position = index
+            index = index + 1
+        gesture_detail = featureVectorList[position].gesture_detail
+        flag = False
+        if flag:
+            num_mutations = num_mutations + 1
+    return gesture_detail
+
+test_data_path = "test/"
 test_count = 0
-for video_location in video_locations:
-    for test_file in os.listdir(video_location):
-        if not test_file.startswith('.') and not test_file.startswith('frames') and not test_file.startswith('results'):
-            recognized_gesture_detail = determine_gesture(video_location, test_file, test_count)
-            test_count += 1
-            results.append(int(recognized_gesture_detail.output_label))
+with open('results.csv', 'w', newline='') as results_file:
+    fields_names = [
+        'Gesture_Video_File_Name', 'Gesture_Name',
+        'Output_Label']
+    data_writer = csv.DictWriter(results_file, fieldnames=fields_names)
+    data_writer.writeheader()
 
-with open('Results.csv', 'w') as results_file:
-    train_data_writer = csv.writer(results_file, delimiter='\n')
-    train_data_writer.writerow(results)
+    for test_file in os.listdir(test_data_path):
+        if not test_file.startswith('frames'):
+            recognized_gesture_detail = gesture_detection(test_data_path, test_file, test_count)
+            test_count = test_count + 1
+
+            data_writer.writerow({
+                'Gesture_Video_File_Name': test_file,
+                'Gesture_Name': recognized_gesture_detail.gesture_name,
+                'Output_Label': recognized_gesture_detail.output_label})
