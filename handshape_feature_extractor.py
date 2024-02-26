@@ -37,6 +37,7 @@ class HandShapeFeatureExtractor:
     @staticmethod
     def __pre_process_input_image(crop):
         try:
+            #img = cv2.resize(crop, (300, 300))
             img = cv2.resize(crop, (300, 300))
             img_arr = np.array(img) / 255.0
             img_arr=np.stack((img_arr,)*3,axis=-1)
