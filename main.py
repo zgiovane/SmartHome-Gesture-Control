@@ -20,8 +20,10 @@ def extract_feature(location, input_file, mid_frame_counter):
     path_to_input_file = os.path.join(location, input_file)
     frame_storage_path = os.path.join(location, "frames/")
     extracted_frame = fe.frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
-    middle_image = cv2.imread(extracted_frame, cv2.IMREAD_GRAYSCALE)
-    response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.get_instance(), middle_image)
+    middle_image = cv2.imread(frameExtractor(folder_path + input_file, folder_path + "frames/", mid_frame_counter), cv2.IMREAD_GRAYSCALE)
+    if middle_image is None:
+    	print(f"Failed to read image for {input_file}. Check if the file exists and the path is correct.")
+    return    response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.get_instance(), middle_image)
     return response
 
 def filename_to_gesture_key(filename):
