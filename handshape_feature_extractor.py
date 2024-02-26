@@ -1,3 +1,4 @@
+
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -8,7 +9,6 @@ Model = keras.models.Model
 
 """
 This is a Singleton class which bears the ml model in memory
-model is used to extract handshape 
 """
 import os.path
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -25,7 +25,8 @@ class HandShapeFeatureExtractor:
 
     def __init__(self):
         if HandShapeFeatureExtractor.__single is None:
-            real_model = load_model(os.path.join(BASE, 'cnn_model.h5'))
+            #real_model = load_model(os.path.join(BASE, 'cnn_model.h5'))
+            real_model = load_model(os.path.join(BASE, 'gestures_trained_cnn_model.h5'))
             self.model = real_model
             HandShapeFeatureExtractor.__single = self
 
@@ -36,17 +37,17 @@ class HandShapeFeatureExtractor:
     @staticmethod
     def __pre_process_input_image(crop):
         try:
-            img = cv2.resize(crop, (200, 200))
+            img = cv2.resize(crop, (300, 300))
             img_arr = np.array(img) / 255.0
-            print("Before reshape, img_arr shape:", img_arr.shape)
-            print("Total number of elements:", img_arr.size)
-            img_arr = img_arr.reshape(1, 200, 200, 1)
+            img_arr=np.stack((img_arr,)*3,axis=-1)
+            #img_arr = img_arr.reshape(1, 200, 200, 1)
+            img_arr = img_arr.reshape(1,300, 300,3)
             return img_arr
         except Exception as e:
             print(str(e))
             raise
 
-    # calculating dimensions for the cropping the specific hand parts
+    # calculating dimensions f0r the cropping the specific hand parts
     # Need to change constant 80 based on the video dimensions
     @staticmethod
     def __bound_box(x, y, max_y, max_x):
@@ -66,6 +67,7 @@ class HandShapeFeatureExtractor:
 
     def extract_feature(self, image):
         try:
+            #print(image.shape)
             img_arr = self.__pre_process_input_image(image)
             # input = tf.keras.Input(tensor=image)
             return self.model.predict(img_arr)
