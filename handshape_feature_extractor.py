@@ -1,73 +1,110 @@
 import cv2
-import numpy as np
+import os
 import tensorflow as tf
+import frameextractor as fe
+import handshape_feature_extractor as hfe
+import csv
 
-keras = tf.keras
-load_model = keras.models.load_model
-Model = keras.models.Model
+class GestureDetail:
+    def __init__(self, gesture_key, gesture_name, output_label):
+        self.gesture_key = gesture_key
+        self.gesture_name = gesture_name
+        self.output_label = output_label
 
-"""
-This is a Singleton class which bears the ml model in memory
-model is used to extract handshape 
-"""
-import os.path
-BASE = os.path.dirname(os.path.abspath(__file__))
+class GestureFeature:
+    def __init__(self, gesture_detail: GestureDetail, extracted_feature):
+        self.gesture_detail = gesture_detail
+        self.extracted_feature = extracted_feature
 
+def extract_feature(location, input_file, mid_frame_counter):
+    path_to_input_file = os.path.join(location, input_file)
+    frame_storage_path = os.path.join(location, "frames/")
+    extracted_frame_path = fe.frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
+    
+    print(f"Attempting to extract frame from: {path_to_input_file}")  # Debug print
+    print(f"Frame should be stored at: {frame_storage_path}")  # Debug print
+    print(f"Extracted frame path: {extracted_frame_path}")  # Debug print
 
-class HandShapeFeatureExtractor:
-    __single = None
+  
+    if not extracted_frame_path or not os.path.exists(extracted_frame_path):
+        print(f"Failed to read image for {input_file}. Check if the file exists and the path is correct.")
+        return None
+    
+    middle_image = cv2.imread(extracted_frame_path)
+    if middle_image is None:
+        print(f"Failed to read image from {extracted_frame_path}.")
+        return None
 
-    @staticmethod
-    def get_instance():
-        if HandShapeFeatureExtractor.__single is None:
-            HandShapeFeatureExtractor()
-        return HandShapeFeatureExtractor.__single
+    # Ensure the image has the correct shape (example for resizing and adding a channel dimension)
+    middle_image_resized = cv2.resize(middle_image, (300, 300))
+    if len(middle_image_resized.shape) == 2:  # Grayscale image, add a channels dimension
+        middle_image_resized = np.expand_dims(middle_image_resized, axis=-1)
 
-    def __init__(self):
-        if HandShapeFeatureExtractor.__single is None:
-            real_model = load_model(os.path.join(BASE, 'cnn_model.h5'))
-            self.model = real_model
-            HandShapeFeatureExtractor.__single = self
-
-        else:
-            raise Exception("This Class bears the model, so it is made Singleton")
-
-    # private method to preprocess the image
-    @staticmethod
-    def __pre_process_input_image(crop):
-        try:
-            img = cv2.resize(crop, (200, 200))
-            img_arr = np.array(img) / 255.0
-            img_arr = img_arr.reshape(1, 200, 200, 1)
-            return img_arr
-        except Exception as e:
-            print(str(e))
-            raise
-
-    # calculating dimensions for the cropping the specific hand parts
-    # Need to change constant 80 based on the video dimensions
-    @staticmethod
-    def __bound_box(x, y, max_y, max_x):
-        y1 = y + 80
-        y2 = y - 80
-        x1 = x + 80
-        x2 = x - 80
-        if max_y < y1:
-            y1 = max_y
-        if y - 80 < 0:
-            y2 = 0
-        if x + 80 > max_x:
-            x1 = max_x
-        if x - 80 < 0:
-            x2 = 0
-        return y1, y2, x1, x2
-
-    def extract_feature(self, image):
-        try:
-            img_arr = self.__pre_process_input_image(image)
-            # input = tf.keras.Input(tensor=image)
-            return self.model.predict(img_arr)
-        except Exception as e:
-            raise
+    response = hfe.HandShapeFeatureExtractor.get_instance().extract_feature(middle_image_resized)
+    return response
 
 
+# Initialize gesture details
+gesture_data = [
+    GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
+    GestureDetail("Num2", "2", "2"), GestureDetail("Num3", "3", "3"),
+    GestureDetail("Num4", "4", "4"), GestureDetail("Num5", "5", "5"),
+    GestureDetail("Num6", "6", "6"), GestureDetail("Num7", "7", "7"),
+    GestureDetail("Num8", "8", "8"), GestureDetail("Num9", "9", "9"),
+    GestureDetail("FanDown", "Decrease Fan Speed", "10"),
+    GestureDetail("FanOn", "FanOn", "11"), GestureDetail("FanOff", "FanOff", "12"),
+    GestureDetail("FanUp", "Increase Fan Speed", "13"),
+    GestureDetail("LightOff", "LightOff", "14"), GestureDetail("LightOn", "LightOn", "15"),
+    GestureDetail("SetThermo", "SetThermo", "16")
+]
+
+def decide_gesture_by_file_name(gesture_file_name):
+    gesture_key = gesture_file_name.split('_')[0]
+    for x in gesture_data:
+        if x.gesture_key == gesture_key:
+            return x
+    return None
+
+def determine_gesture(gesture_location, gesture_file_name, mid_frame_counter):
+    video_feature = extract_feature(gesture_location, gesture_file_name, mid_frame_counter)
+    if video_feature is None:
+        print(f"Feature extraction failed for {gesture_file_name}. Skipping...")
+        return None  # Skipping this file due to failure in extracting features
+
+    min_cosine_similarity = float('inf')
+    recognized_gesture_detail = None
+    for featureVector in featureVectorList:
+        cosine_similarity = tf.keras.losses.cosine_similarity(video_feature, featureVector.extracted_feature, axis=-1)
+        if cosine_similarity < min_cosine_similarity:
+            min_cosine_similarity = cosine_similarity
+            recognized_gesture_detail = featureVector.gesture_detail
+    return recognized_gesture_detail
+
+# Process training data to build feature vector list
+featureVectorList = []
+path_to_train_data = "traindata/"
+count = 0
+for file in os.listdir(path_to_train_data):
+    if not file.startswith('.') and not file.startswith('frames') and not file.startswith('results'):
+        gesture_detail = decide_gesture_by_file_name(file)
+        if gesture_detail is not None:
+            feature = extract_feature(path_to_train_data, file, count)
+            if feature is not None:
+                featureVectorList.append(GestureFeature(gesture_detail, feature))
+        count += 1
+
+# Process test data
+results = []
+test_data_path = "test/"
+test_count = 0
+for test_file in os.listdir(test_data_path):
+    if not test_file.startswith('.') and not test_file.startswith('frames') and not test_file.startswith('results'):
+        recognized_gesture_detail = determine_gesture(test_data_path, test_file, test_count)
+        if recognized_gesture_detail is not None:
+            results.append(int(recognized_gesture_detail.output_label))
+        test_count += 1
+
+# Save results to CSV
+with open('Results.csv', 'w', newline='') as results_file:
+    csv_writer = csv.writer(results_file)
+    csv_writer.writerow(results)
