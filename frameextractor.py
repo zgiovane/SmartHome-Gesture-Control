@@ -4,17 +4,8 @@ Created on Thu Jan 28 00:52:08 2021
 
 @author: chakati
 """
-# code to get the key frame from the video and save it as a png file.
-
 import cv2
 import os
-
-"""
-videopath : path of the video file
-frames_path: path of the directory to which the frames are saved
-count: to assign the video order to the frame.
-"""
-
 
 def frameExtractor(videopath, frames_path, count):
     if not os.path.exists(frames_path):
