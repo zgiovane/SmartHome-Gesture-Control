@@ -21,18 +21,28 @@ def extract_feature(location, input_file, mid_frame_counter):
     frame_storage_path = os.path.join(location, "frames/")
     extracted_frame_path = fe.frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
     
-    # Verify the extracted frame exists before reading
+    print(f"Attempting to extract frame from: {path_to_input_file}")  # Debug print
+    print(f"Frame should be stored at: {frame_storage_path}")  # Debug print
+    print(f"Extracted frame path: {extracted_frame_path}")  # Debug print
+
+  
     if not extracted_frame_path or not os.path.exists(extracted_frame_path):
         print(f"Failed to read image for {input_file}. Check if the file exists and the path is correct.")
         return None
     
-    middle_image = cv2.imread(extracted_frame_path, cv2.IMREAD_GRAYSCALE)
+    middle_image = cv2.imread(extracted_frame_path)
     if middle_image is None:
         print(f"Failed to read image from {extracted_frame_path}.")
         return None
 
-    response = hfe.HandShapeFeatureExtractor.get_instance().extract_feature(middle_image)
+    # Ensure the image has the correct shape (example for resizing and adding a channel dimension)
+    middle_image_resized = cv2.resize(middle_image, (300, 300))
+    if len(middle_image_resized.shape) == 2:  # Grayscale image, add a channels dimension
+        middle_image_resized = np.expand_dims(middle_image_resized, axis=-1)
+
+    response = hfe.HandShapeFeatureExtractor.get_instance().extract_feature(middle_image_resized)
     return response
+
 
 # Initialize gesture details
 gesture_data = [
@@ -49,8 +59,9 @@ gesture_data = [
 ]
 
 def decide_gesture_by_file_name(gesture_file_name):
-    for x in gesture_data: 
-        if x.gesture_label == gesture_file_name.split('_')[0]:
+    gesture_key = gesture_file_name.split('_')[0]
+    for x in gesture_data:
+        if x.gesture_key == gesture_key:
             return x
     return None
 
