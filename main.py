@@ -50,7 +50,7 @@ gesture_data = [
 
 def decide_gesture_by_file_name(gesture_file_name):
     for x in gesture_data: 
-        if x.gesture_key == gesture_file_name.split('_')[0]:
+        if x.gesture_label == gesture_file_name.split('_')[0]:
             return x
     return None
 
