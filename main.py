@@ -107,4 +107,6 @@ for test_file in os.listdir(test_data_path):
 # Save results to CSV
 with open('Results.csv', 'w', newline='') as results_file:
     csv_writer = csv.writer(results_file)
-    csv_writer.writerow(results)
+    for result in results:
+        csv_writer.writerow([result])  # Write each result to its own row
+
