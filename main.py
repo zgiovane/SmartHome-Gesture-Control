@@ -34,6 +34,19 @@ def extract_feature(location, input_file, mid_frame_counter):
     response = hfe.HandShapeFeatureExtractor.get_instance().extract_feature(middle_image)
     return response
 
+# Initialize gesture details
+gesture_data = [GestureDetails("Num0", "0", "0"), GestureDetails("Num1", "1", "1"),
+                GestureDetails("Num2", "2", "2"), GestureDetails("Num3", "3", "3"),
+                GestureDetails("Num4", "4", "4"), GestureDetails("Num5", "5", "5"),
+                GestureDetails("Num6", "6", "6"), GestureDetails("Num7", "7", "7"),
+                GestureDetails("Num8", "8", "8"), GestureDetails("Num9", "9", "9"),
+                GestureDetails("FanDown", "Decrease Fan Speed", "10"),
+                GestureDetails("FanOn", "FanOn", "11"), GestureDetails("FanOff", "FanOff", "12"),
+                GestureDetails("FanUp", "Increase Fan Speed", "13"),
+                GestureDetails("LightOff", "LightOff", "14"), GestureDetails("LightOn", "LightOn", "15"),
+                GestureDetails("SetThermo", "SetThermo", "16")
+                ]
+
 def decide_gesture_by_file_name(gesture_file_name):
     for x in gesture_details:
         if x.gesture_key == gesture_file_name.split('_')[0]:
@@ -55,18 +68,6 @@ def determine_gesture(gesture_location, gesture_file_name, mid_frame_counter):
             recognized_gesture_detail = featureVector.gesture_detail
     return recognized_gesture_detail
 
-# Initialize gesture details
-gesture_data = [GestureDetails("Num0", "0", "0"), GestureDetails("Num1", "1", "1"),
-                GestureDetails("Num2", "2", "2"), GestureDetails("Num3", "3", "3"),
-                GestureDetails("Num4", "4", "4"), GestureDetails("Num5", "5", "5"),
-                GestureDetails("Num6", "6", "6"), GestureDetails("Num7", "7", "7"),
-                GestureDetails("Num8", "8", "8"), GestureDetails("Num9", "9", "9"),
-                GestureDetails("FanDown", "Decrease Fan Speed", "10"),
-                GestureDetails("FanOn", "FanOn", "11"), GestureDetails("FanOff", "FanOff", "12"),
-                GestureDetails("FanUp", "Increase Fan Speed", "13"),
-                GestureDetails("LightOff", "LightOff", "14"), GestureDetails("LightOn", "LightOn", "15"),
-                GestureDetails("SetThermo", "SetThermo", "16")
-                ]
 # Process training data to build feature vector list
 featureVectorList = []
 path_to_train_data = "traindata/"
