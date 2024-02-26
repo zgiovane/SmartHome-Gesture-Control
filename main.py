@@ -19,33 +19,36 @@ class GestureFeature:
 def extract_feature(location, input_file, mid_frame_counter):
     path_to_input_file = os.path.join(location, input_file)
     frame_storage_path = os.path.join(location, "frames/")
-    extracted_frame_path = fe.frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
-    
-    print(f"Attempting to extract frame from: {path_to_input_file}")  # Debug print
-    print(f"Frame should be stored at: {frame_storage_path}")  # Debug print
-    print(f"Extracted frame path: {extracted_frame_path}")  # Debug print
-
-  
-    if not extracted_frame_path or not os.path.exists(extracted_frame_path):
-        print(f"Failed to read image for {input_file}. Check if the file exists and the path is correct.")
-        return None
-    
-    middle_image = cv2.imread(extracted_frame_path)
-    if middle_image is None:
-        print(f"Failed to read image from {extracted_frame_path}.")
-        return None
-
-    # Ensure the image has the correct shape (example for resizing and adding a channel dimension)
-    middle_image_resized = cv2.resize(middle_image, (300, 300))
-    if len(middle_image_resized.shape) == 2:  # Grayscale image, add a channels dimension
-        middle_image_resized = np.expand_dims(middle_image_resized, axis=-1)
-
-    response = hfe.HandShapeFeatureExtractor.get_instance().extract_feature(middle_image_resized)
+    extracted_frame = fe.frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
+    middle_image = cv2.imread(extracted_frame, cv2.IMREAD_GRAYSCALE)
+    response = hfe.HandShapeFeatureExtractor.extract_feature(hfe.HandShapeFeatureExtractor.get_instance(), middle_image)
     return response
 
+def decide_gesture_by_file_name(gesture_file_name):
+    for x in gesture_details:
+        if x.gesture_key == gesture_file_name.split('_')[0]:
+            return x
+    return None
 
-# Initialize gesture details
-gesture_data = [
+# use cosine similarity for comparing the vectors to classify the gesture
+def determine_gesture(gesture_location, gesture_file_name, mid_frame_counter):
+    video_feature = extract_feature(gesture_location, gesture_file_name, mid_frame_counter)
+    max_mutations = 0
+    gesture_detail: GestureDetail = GestureDetail("", "", "")
+    cos_sin = 1
+    position = 0
+    cursor = 0
+    for featureVector in featureVectorList:
+        calc_cos_sin = tf.keras.losses.cosine_similarity(video_feature, featureVector.extracted_feature, axis=-1)
+        if calc_cos_sin < cos_sin:
+            cos_sin = calc_cos_sin
+            position = cursor
+            cursor += 1
+    gesture_detail = featureVectorList[position].gesture_detail
+    return gesture_detail
+
+# list of GestureDetails: gesture name, a description, and output label
+gesture_details = [
     GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
     GestureDetail("Num2", "2", "2"), GestureDetail("Num3", "3", "3"),
     GestureDetail("Num4", "4", "4"), GestureDetail("Num5", "5", "5"),
@@ -58,53 +61,28 @@ gesture_data = [
     GestureDetail("SetThermo", "SetThermo", "16")
 ]
 
-def decide_gesture_by_file_name(gesture_file_name):
-    gesture_key = gesture_file_name.split('_')[0]
-    for x in gesture_data:
-        if x.gesture_key == gesture_key:
-            return x
-    return None
-
-def determine_gesture(gesture_location, gesture_file_name, mid_frame_counter):
-    video_feature = extract_feature(gesture_location, gesture_file_name, mid_frame_counter)
-    if video_feature is None:
-        print(f"Feature extraction failed for {gesture_file_name}. Skipping...")
-        return None  # Skipping this file due to failure in extracting features
-
-    min_cosine_similarity = float('inf')
-    recognized_gesture_detail = None
-    for featureVector in featureVectorList:
-        cosine_similarity = tf.keras.losses.cosine_similarity(video_feature, featureVector.extracted_feature, axis=-1)
-        if cosine_similarity < min_cosine_similarity:
-            min_cosine_similarity = cosine_similarity
-            recognized_gesture_detail = featureVector.gesture_detail
-    return recognized_gesture_detail
-
-# Process training data to build feature vector list
+# Get the penultimate layer for training data
 featureVectorList = []
 path_to_train_data = "traindata/"
 count = 0
 for file in os.listdir(path_to_train_data):
     if not file.startswith('.') and not file.startswith('frames') and not file.startswith('results'):
-        gesture_detail = decide_gesture_by_file_name(file)
-        if gesture_detail is not None:
-            feature = extract_feature(path_to_train_data, file, count)
-            if feature is not None:
-                featureVectorList.append(GestureFeature(gesture_detail, feature))
+        featureVectorList.append(GestureFeature(decide_gesture_by_file_name(file), extract_feature(path_to_train_data, file, count)))
         count += 1
 
-# Process test data
+# Get the penultimate layer for test data
 results = []
-test_data_path = "test/"
+video_locations = ["test/"]
 test_count = 0
-for test_file in os.listdir(test_data_path):
-    if not test_file.startswith('.') and not test_file.startswith('frames') and not test_file.startswith('results'):
-        recognized_gesture_detail = determine_gesture(test_data_path, test_file, test_count)
-        if recognized_gesture_detail is not None:
+for video_location in video_locations:
+    fieldnames = ['Gesture_Video_File_Name', 'Gesture_Name', 'Output_Label']
+    for test_file in os.listdir(video_location):
+        if not test_file.startswith('.') and not test_file.startswith('frames') and not test_file.startswith('results'):
+            recognized_gesture_detail = determine_gesture(video_location, test_file, test_count)
+            test_count += 1
             results.append(int(recognized_gesture_detail.output_label))
-        test_count += 1
 
-# Save results to CSV
-with open('Results.csv', 'w', newline='') as results_file:
-    csv_writer = csv.writer(results_file)
-    csv_writer.writerow(results)
+# Print the results to Results.csv
+with open('Results.csv', 'w') as results_file:
+    train_data_writer = csv.writer(results_file, delimiter='\n')
+    train_data_writer.writerow(results)
