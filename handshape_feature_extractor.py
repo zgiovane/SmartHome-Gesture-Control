@@ -25,8 +25,8 @@ class HandShapeFeatureExtractor:
 
     def __init__(self):
         if HandShapeFeatureExtractor.__single is None:
-            #real_model = load_model(os.path.join(BASE, 'cnn_model.h5'))
-            real_model = load_model(os.path.join(BASE, 'gestures_trained_cnn_model.h5'))
+            real_model = load_model(os.path.join(BASE, 'cnn_model.h5'))
+            #real_model = load_model(os.path.join(BASE, 'gestures_trained_cnn_model.h5'))
             self.model = real_model
             HandShapeFeatureExtractor.__single = self
 
@@ -40,8 +40,8 @@ class HandShapeFeatureExtractor:
             img = cv2.resize(crop, (300, 300))
             img_arr = np.array(img) / 255.0
             img_arr=np.stack((img_arr,)*3,axis=-1)
-            #img_arr = img_arr.reshape(1, 200, 200, 1)
-            img_arr = img_arr.reshape(1,300, 300,3)
+            img_arr = img_arr.reshape(1, 200, 200, 1)
+            #img_arr = img_arr.reshape(1,300, 300,3)
             return img_arr
         except Exception as e:
             print(str(e))
