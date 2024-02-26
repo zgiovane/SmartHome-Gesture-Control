@@ -24,6 +24,7 @@ def extract_feature(location, input_file, mid_frame_counter):
     path_to_input_file = os.path.join(location, input_file)
     frame_storage_path = os.path.join(location, "frames/")
     extracted_frame = frameExtractor(path_to_input_file, frame_storage_path, mid_frame_counter)
+    print(f"Attempting to read image from: {extracted_frame}") 
     middle_image = cv2.imread(extracted_frame, cv2.IMREAD_GRAYSCALE)
     response = HandShapeFeatureExtractor.get_instance().extract_feature(middle_image)
     return response
