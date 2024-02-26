@@ -37,11 +37,14 @@ class HandShapeFeatureExtractor:
     @staticmethod
     def __pre_process_input_image(crop):
         try:
+            # Resize the image to the expected input size of the model
             img = cv2.resize(crop, (300, 300))
+            # Normalize the pixel values
             img_arr = np.array(img) / 255.0
-            img_arr=np.stack((img_arr,)*3,axis=-1)
-            #img_arr = img_arr.reshape(1, 200, 200, 1)
-            img_arr = img_arr.reshape(1,300, 300,3)
+            # Ensure the image has 3 channels if it's grayscale
+            if len(img_arr.shape) == 2 or img_arr.shape[2] == 1:
+                img_arr = np.stack((img_arr,)*3, axis=-1)
+            img_arr = img_arr.reshape(1, 300, 300, 3)  # Reshape for the model input
             return img_arr
         except Exception as e:
             print(str(e))
