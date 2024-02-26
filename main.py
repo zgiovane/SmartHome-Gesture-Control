@@ -35,20 +35,21 @@ def extract_feature(location, input_file, mid_frame_counter):
     return response
 
 # Initialize gesture details
-gesture_data = [gesture_details("Num0", "0", "0"), gesture_details("Num1", "1", "1"),
-                gesture_details("Num2", "2", "2"), gesture_details("Num3", "3", "3"),
-                gesture_details("Num4", "4", "4"), gesture_details("Num5", "5", "5"),
-                gesture_details("Num6", "6", "6"), gesture_details("Num7", "7", "7"),
-                gesture_details("Num8", "8", "8"), gesture_details("Num9", "9", "9"),
-                gesture_details("FanDown", "Decrease Fan Speed", "10"),
-                gesture_details("FanOn", "FanOn", "11"), gesture_details("FanOff", "FanOff", "12"),
-                gesture_details("FanUp", "Increase Fan Speed", "13"),
-                gesture_details("LightOff", "LightOff", "14"), gesture_details("LightOn", "LightOn", "15"),
-                gesture_details("SetThermo", "SetThermo", "16")
-                ]
+gesture_data = [
+    GestureDetail("Num0", "0", "0"), GestureDetail("Num1", "1", "1"),
+    GestureDetail("Num2", "2", "2"), GestureDetail("Num3", "3", "3"),
+    GestureDetail("Num4", "4", "4"), GestureDetail("Num5", "5", "5"),
+    GestureDetail("Num6", "6", "6"), GestureDetail("Num7", "7", "7"),
+    GestureDetail("Num8", "8", "8"), GestureDetail("Num9", "9", "9"),
+    GestureDetail("FanDown", "Decrease Fan Speed", "10"),
+    GestureDetail("FanOn", "FanOn", "11"), GestureDetail("FanOff", "FanOff", "12"),
+    GestureDetail("FanUp", "Increase Fan Speed", "13"),
+    GestureDetail("LightOff", "LightOff", "14"), GestureDetail("LightOn", "LightOn", "15"),
+    GestureDetail("SetThermo", "SetThermo", "16")
+]
 
 def decide_gesture_by_file_name(gesture_file_name):
-    for x in gesture_details:
+    for x in gesture_data: 
         if x.gesture_key == gesture_file_name.split('_')[0]:
             return x
     return None
