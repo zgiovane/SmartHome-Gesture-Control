@@ -1,31 +1,33 @@
+import cv2  # Importing the OpenCV library for image processing
+import numpy as np  # Importing NumPy for numerical operations
+import tensorflow as tf  # Importing TensorFlow for machine learning operations
 
-import cv2
-import numpy as np
-import tensorflow as tf
+keras = tf.keras  # Importing Keras for building and using neural networks
+load_model = keras.models.load_model  # Function to load a pre-trained model
+Model = keras.models.Model  # Class representing a Keras model
 
-keras = tf.keras
-load_model = keras.models.load_model
-Model = keras.models.Model
+# Importing the os.path module for file path operations
+import os.path  
 
-"""
-This is a Singleton class which bears the ml model in memory
-"""
-import os.path
+# Define the base directory path
 BASE = os.path.dirname(os.path.abspath(__file__))
 
-
 class HandShapeFeatureExtractor:
-    __single = None
+    # Singleton class for extracting hand shape features using a pre-trained CNN model.
+
+    __single = None  # Class variable to hold the single instance of the class
 
     @staticmethod
     def get_instance():
+        # Static method to get the singleton instance of the class.
         if HandShapeFeatureExtractor.__single is None:
             HandShapeFeatureExtractor()
         return HandShapeFeatureExtractor.__single
 
     def __init__(self):
+        # Constructor method to initialize the singleton instance with the pre-trained model.
         if HandShapeFeatureExtractor.__single is None:
-            #real_model = load_model(os.path.join(BASE, 'cnn_model.h5'))
+            # Load the pre-trained CNN model
             real_model = load_model(os.path.join(BASE, 'gestures_trained_cnn_model.h5'))
             self.model = real_model
             HandShapeFeatureExtractor.__single = self
@@ -33,9 +35,8 @@ class HandShapeFeatureExtractor:
         else:
             raise Exception("This Class bears the model, so it is made Singleton")
 
-    # private method to preprocess the image
-    @staticmethod
     def __pre_process_input_image(crop):
+        # Private method to preprocess the input image before feeding it to the model.
         try:
             # Resize the image to the expected input size of the model
             img = cv2.resize(crop, (300, 300))
@@ -43,17 +44,15 @@ class HandShapeFeatureExtractor:
             img_arr = np.array(img) / 255.0
             # Ensure the image has 3 channels if it's grayscale
             if len(img_arr.shape) == 2 or img_arr.shape[2] == 1:
-                img_arr = np.stack((img_arr,)*3, axis=-1)
+                img_arr = np.stack((img_arr,) * 3, axis=-1)
             img_arr = img_arr.reshape(1, 300, 300, 3)  # Reshape for the model input
             return img_arr
         except Exception as e:
             print(str(e))
             raise
 
-    # calculating dimensions f0r the cropping the specific hand parts
-    # Need to change constant 80 based on the video dimensions
-    @staticmethod
     def __bound_box(x, y, max_y, max_x):
+        # Private method to calculate the bounding box for cropping specific hand parts.
         y1 = y + 80
         y2 = y - 80
         x1 = x + 80
@@ -69,12 +68,8 @@ class HandShapeFeatureExtractor:
         return y1, y2, x1, x2
 
     def extract_feature(self, image):
+        # Method to extract hand shape features from an image using the pre-trained model.
         try:
-            #print(image.shape)
             img_arr = self.__pre_process_input_image(image)
-            # input = tf.keras.Input(tensor=image)
             return self.model.predict(img_arr)
         except Exception as e:
-            raise
-
-
